@@ -7,17 +7,20 @@ body {
 }
 
 #app {
+    margin: 100px;
     display: flex;
     justify-content: space-between;
-    width: 100%;
 }
 
 .column {
-    width: 30%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 15%;
     padding: 10px;
-    border: 2px solid #ccc;
+    border: 2px solid #540000;
     border-radius: 8px;
-    background-color: #fff;
+    background-color: #00b193;
 }
 
 .card {
