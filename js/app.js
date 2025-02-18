@@ -10,6 +10,12 @@ const app = new Vue({
             blockFirstColumn: false,
         };
     },
+    methods: {
+        moveCard(cardIndex, columnIndex) {
+            const card = this.columns[cardIndex.column - 1].cards.splice(cardIndex.index, 1)[0];
+            this.columns[columnIndex - 1].cards.push(card);
+        },
+    },
     components: {
         Card: {
             props: {
