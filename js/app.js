@@ -8,6 +8,7 @@ const Card = {
         completedAt: String,
         updateCard: Function,
         totalCardsInSecondColumn: Number,
+        image: String,
     },
     computed: {
         completed() {
@@ -47,6 +48,7 @@ const Card = {
     template: `
         <div class="card">
             <h3>{{ title }}</h3>
+            <img v-if="image" :src="image" alt="Card Image" class="card-image"/>
             <ul>
                 <li v-for="(item, index) in list" :key="index">
                   <input type="checkbox" v-model="item.done" @change="checkItem(index)" :disabled="isBlocked"/>
@@ -80,6 +82,7 @@ const Column = {
                   :moveCard="moveCard"
                   :updateCard="updateCard"
                   :totalCardsInSecondColumn="totalCardsInSecondColumn"
+                  :image="card.image"
                 />
             </div>
         </div>
@@ -94,6 +97,7 @@ const app = new Vue({
                 title: '',
                 list: ['', '', ''],
                 completedAt: null,
+                image: null,
             },
             columns: [
                 { cards: JSON.parse(localStorage.getItem('column1')) || [] },
@@ -104,6 +108,15 @@ const app = new Vue({
         };
     },
     methods: {
+        handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                this.newCard.image = reader.result; // base 64
+            };
+        },
         updateCard(index, column, data) {
             Vue.set(this.columns[column - 1].cards[index], 'completedAt', data.completedAt);
             this.saveData();
@@ -150,6 +163,7 @@ const app = new Vue({
                 const newCard = {
                     title: this.newCard.title,
                     list: this.newCard.list.map(text => ({ text, done: false })),
+                    image: this.newCard.image, // добавляем изображение в саму карточку
                 };
                 if (this.columns[0].cards.length < 3) {
                     this.columns[0].cards.push(newCard);
@@ -181,6 +195,10 @@ const app = new Vue({
                         <button v-if="newCard.list.length > 3" type="button" @click="removeItem(index)">✖</button>
                     </div>
                     <button v-if="newCard.list.length < 5" type="button" @click="addItem">Добавить пункт</button>
+                </div>
+                <div>
+                    <label>Загрузить изображение:</label>
+                    <input type="file" @change="handleImageUpload" accept="image/*">
                 </div>
                 <button type="submit" :disabled="blockFirstColumn">Add Note</button>
             </form>
