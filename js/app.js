@@ -7,22 +7,25 @@ const Card = {
         moveCard: Function,
         completedAt: String,
         updateCard: Function,
+        totalCardsInSecondColumn: Number,
     },
     computed: {
         completed() {
             const completedItems = this.list.filter(item => item.done).length;
             return Math.floor((completedItems / this.list.length) * 100);
         },
+        isBlocked() {
+            return this.column === 1 && this.totalCardsInSecondColumn >= 5 && this.completed < 100;
+        }
     },
     methods: {
         checkItem(index) {
+            if (this.isBlocked) return;
             const completedItems = this.list.filter(item => item.done).length;
             const completed = Math.floor((completedItems / this.list.length) * 100);
             if (completed === 100 && !this.completedAt) {
                 const completedTime = new Date().toLocaleString();
                 console.log('Задача завершена! Устанавливаем время:', completedTime);
-
-                // Обновляем `completedAt` и передаём в родителя
                 this.updateCard(this.index, this.column, { completedAt: completedTime });
             }
 
@@ -31,6 +34,7 @@ const Card = {
             } else if (this.column === 2 && completed === 100) {
                 this.moveCard({ column: this.column, index: this.index }, 3);
             }
+            this.$root.checkBlockFirstColumn();
         },
     },
     template: `
@@ -38,7 +42,7 @@ const Card = {
             <h3>{{ title }}</h3>
             <ul>
                 <li v-for="(item, index) in list" :key="index">
-                  <input type="checkbox" v-model="item.done" @change="checkItem(index)" :disabled="item.done"/>
+                  <input type="checkbox" v-model="item.done" @change="checkItem(index)" :disabled="item.done || isBlocked"/>
                   {{ item.text }}
                 </li>
             </ul>
@@ -53,6 +57,7 @@ const Column = {
         cards: Array,
         moveCard: Function,
         updateCard: Function,
+        totalCardsInSecondColumn: Number,
     },
     components: { Card },
     template: `
@@ -67,6 +72,7 @@ const Column = {
                   :completedAt="card.completedAt"
                   :moveCard="moveCard"
                   :updateCard="updateCard"
+                  :totalCardsInSecondColumn="totalCardsInSecondColumn"
                 />
             </div>
         </div>
@@ -99,6 +105,19 @@ const app = new Vue({
             const card = this.columns[cardIndex.column - 1].cards.splice(cardIndex.index, 1)[0];
             this.columns[columnIndex - 1].cards.push(card);
             this.saveData();
+            this.checkBlockFirstColumn();
+        },
+        checkBlockFirstColumn() {
+            const secondColumnFull = this.columns[1].cards.length >= 5;
+            const firstColumnHasProgressingCard = this.columns[0].cards.some(card => {
+                const completedItems = card.list.filter(item => item.done).length;
+                return Math.floor((completedItems / card.list.length) * 100) > 50;
+            });
+            if (secondColumnFull && firstColumnHasProgressingCard) {
+                this.blockFirstColumn = true;
+            } else if (this.columns[1].cards.length < 5) {
+                this.blockFirstColumn = false;
+            }
         },
         saveData() {
             localStorage.setItem('column1', JSON.stringify(this.columns[0].cards));
@@ -116,6 +135,10 @@ const app = new Vue({
             }
         },
         addNewCard() {
+            if (this.blockFirstColumn) {
+                alert('Первый столбец заблокирован, пока во втором не появится свободное место');
+                return;
+            }
             if (this.newCard.title.trim() && this.newCard.list.every(item => item.trim())) {
                 const newCard = {
                     title: this.newCard.title,
@@ -152,7 +175,7 @@ const app = new Vue({
                     </div>
                     <button v-if="newCard.list.length < 5" type="button" @click="addItem">Добавить пункт</button>
                 </div>
-                <button type="submit">Add Note</button>
+                <button type="submit" :disabled="blockFirstColumn">Add Note</button>
             </form>
         </div>
         <div class="columns-container">
@@ -163,6 +186,7 @@ const app = new Vue({
             :cards="column.cards"
             :moveCard="moveCard"
             :updateCard="updateCard"
+            :totalCardsInSecondColumn="columns[1].cards.length"
             />
         </div>
     </div>
