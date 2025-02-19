@@ -28,11 +28,18 @@ const Card = {
                 console.log('Задача завершена! Устанавливаем время:', completedTime);
                 this.updateCard(this.index, this.column, { completedAt: completedTime });
             }
-
+            else if (completed < 100 && this.completedAt) {
+                this.updateCard(this.index, this.column, { completedAt: null });
+            }
             if (this.column === 1 && completed > 50) {
                 this.moveCard({ column: this.column, index: this.index }, 2);
             } else if (this.column === 2 && completed === 100) {
                 this.moveCard({ column: this.column, index: this.index }, 3);
+            }
+            if (this.column === 3 && completed < 100) {
+                this.moveCard({ column: this.column, index: this.index }, 2);
+            } else if (this.column === 2 && completed < 50) {
+                this.moveCard({ column: this.column, index: this.index }, 1);
             }
             this.$root.checkBlockFirstColumn();
         },
@@ -42,7 +49,7 @@ const Card = {
             <h3>{{ title }}</h3>
             <ul>
                 <li v-for="(item, index) in list" :key="index">
-                  <input type="checkbox" v-model="item.done" @change="checkItem(index)" :disabled="item.done || isBlocked"/>
+                  <input type="checkbox" v-model="item.done" @change="checkItem(index)" :disabled="isBlocked"/>
                   {{ item.text }}
                 </li>
             </ul>
